@@ -2,11 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSPasteboardUsageDescription</key>
+	<string>Access to clipboard is needed to paste shopping list items.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
 	</array>
-	<key>NSPasteboardUsageDescription</key>
-	<string>Access to clipboard is needed to paste shopping list items.</string>
 </dict>
 </plist>

@@ -171,7 +171,7 @@ struct ContentView: View {
                             Toggle(isOn: $addToTop) {
                                 Label("Add New Items to Top", systemImage: "arrow.up")
                             }
-                            .onChange(of: addToTop) { _, newValue in
+                            .onChange(of: addToTop) { newValue in
                                 savedAddToTop = newValue
                             }
                             
@@ -275,7 +275,7 @@ struct ContentView: View {
                         TextField("Add new item", text: $newItemName)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .focused($isTextFieldFocused)
-                            .onChange(of: newItemName) { oldValue, newValue in
+                            .onChange(of: newItemName) { newValue in
                                 if newValue.contains("\n") || newValue.contains(",") {
                                     let items = newValue
                                         .split(whereSeparator: { $0.isNewline || $0 == "," })
@@ -314,7 +314,7 @@ struct ContentView: View {
                                 key: ScrollOffsetPreferenceKey.self,
                                 value: -geometry.frame(in: .global).minY
                             )
-                            .onChange(of: -geometry.frame(in: .global).minY) { oldValue, newValue in
+                            .onChange(of: -geometry.frame(in: .global).minY) { newValue in
                                 withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.8, blendDuration: 0.1)) {
                                     if newValue > -30 {
                                         headerOffset = -110

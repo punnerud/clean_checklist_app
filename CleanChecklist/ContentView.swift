@@ -43,6 +43,7 @@ struct ContentView: View {
     @AppStorage("textSize") private var savedTextSize: Double = 16
     @AppStorage("addToTop") private var savedAddToTop: Bool = false
     @State private var showDeleteConfirmation = false
+    @State private var showExportOptions = false
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Item.order, ascending: true)],
@@ -102,21 +103,30 @@ struct ContentView: View {
     }
 
     private func addMultipleItems(_ itemNames: [String]) {
-        // Filter out duplicates and empty items
+        // Filter out duplicates and empty items while preserving order
         let newItems = itemNames
             .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-            .filter { !itemExists($0) }
+            .filter { !$0.isEmpty && !itemExists($0) }
         
         // Add all new items
         withAnimation {
-            for itemName in newItems {
+            let startOrder = addToTop ? 0 : Int32(items.count)
+            
+            if addToTop {
+                // Shift existing items down by the number of new items
+                for item in items {
+                    item.order += Int32(newItems.count)
+                }
+            }
+            
+            // Add new items while preserving their order
+            for (index, itemName) in newItems.enumerated() {
                 let newItem = Item(context: viewContext)
                 newItem.timestamp = Date()
                 newItem.name = itemName
                 newItem.isCompleted = false
-                newItem.order = Int32(items.count)
-                newItem.quantity = 1  // Add this line to set initial quantity
+                newItem.quantity = 1
+                newItem.order = startOrder + (addToTop ? Int32(index) : Int32(index))
             }
             
             try? viewContext.save()
@@ -135,12 +145,21 @@ struct ContentView: View {
     private func pasteFromClipboard() {
         if let pastedText = UIPasteboard.general.string {
             let items = pastedText
-                .split(whereSeparator: { $0.isNewline || $0 == "," })
-                .map(String.init)
-                .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                .components(separatedBy: .newlines)
+                .flatMap { $0.components(separatedBy: ",") }
+                .map { $0.trimmingCharacters(in: .whitespaces) }
             
             addMultipleItems(items)
         }
+    }
+
+    private func exportList(separator: String) {
+        let itemsList = items
+            .sorted { $0.order < $1.order }
+            .map { $0.name ?? "" }
+            .joined(separator: separator)
+        
+        UIPasteboard.general.string = itemsList
     }
 
     var body: some View {
@@ -241,6 +260,11 @@ struct ContentView: View {
                             }) {
                                 Label("Paste Items", systemImage: "doc.on.clipboard")
                             }
+                            Button(action: {
+                                showExportOptions = true
+                            }) {
+                                Label("Export List", systemImage: "square.and.arrow.up")
+                            }
                         } label: {
                             Image(systemName: "gear")
                                 .imageScale(.large)
@@ -257,6 +281,21 @@ struct ContentView: View {
                             Button("Cancel", role: .cancel) {}
                         } message: {
                             Text("This action cannot be undone.")
+                        }
+                        .confirmationDialog(
+                            "Export Format",
+                            isPresented: $showExportOptions,
+                            titleVisibility: .visible
+                        ) {
+                            Button("New Lines") {
+                                exportList(separator: "\n")
+                            }
+                            Button("Comma Separated") {
+                                exportList(separator: ", ")
+                            }
+                            Button("Cancel", role: .cancel) { }
+                        } message: {
+                            Text("Choose export format")
                         }
                         
                         Button(action: {
